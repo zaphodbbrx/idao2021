@@ -1,3 +1,4 @@
+import os
 import re
 import numpy as np
 import torch
@@ -6,6 +7,10 @@ import torchvision
 
 def parse_energy(img_name):
     return float(re.search('_[0-9]+_keV', img_name)[0].split('_')[1])
+
+
+def parse_id(file_path):
+    return os.path.splitext(os.path.basename(file_path))[0]
 
 
 def signaltonoise(a, axis=0, ddof=0):
@@ -17,14 +22,19 @@ def signaltonoise(a, axis=0, ddof=0):
 
 class IdaoDataset(torchvision.datasets.ImageFolder):
 
-    def __init__(self, **kwargs):
+    def __init__(self, train_mode=True, **kwargs):
         super(IdaoDataset, self).__init__(**kwargs)
+        self.train_mode = train_mode
 
     def __getitem__(self, item):
         img, cls = super(IdaoDataset, self).__getitem__(item)
         img_path, _ = self.imgs[item]
-        energy = parse_energy(img_path)
-        return img, [float(cls), energy]
+        if self.train_mode:
+            energy = parse_energy(img_path)
+            return img, [float(cls), energy]
+        else:
+            id = parse_id(img_path)
+            return img, id
 
 
 class IdaoDatasetSNR(IdaoDataset):
