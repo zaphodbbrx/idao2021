@@ -11,7 +11,8 @@ class BackBone(nn.Module):
         self.backbone = torch.nn.Sequential(*list(base_model.children())[:-1])
         dummy_input = torch.Tensor(np.random.rand(1, 3, input_size, input_size))
         dummy_feats = self.backbone(dummy_input)
-        self.n_feats = dummy_feats.view(1, -1).shape[1]
+        # self.n_feats = dummy_feats.view(1, -1).shape[1]
+        self.n_feats = dummy_feats.shape[1]
 
     def forward(self, x):
         return self.backbone(x)
@@ -48,9 +49,10 @@ class SeparateModel(nn.Module):
     def forward(self, x):
         cls_feats = self.cls_fe(x)
         reg_feats = self.reg_fe(x)
-        cls_feats = cls_feats.view(x.shape[0], -1)
-        reg_feats = reg_feats.view(x.shape[0], -1)
-        # reg_feats = torch.cat([reg_feats, self.compute_snr(x)])
+        # cls_feats = cls_feats.view(x.shape[0], -1)
+        # reg_feats = reg_feats.view(x.shape[0], -1)
+        cls_feats = torch.mean(cls_feats, dim=[2,3])
+        reg_feats = torch.mean(reg_feats, dim=[2,3])
         cls = torch.sigmoid(self.cls_pred(cls_feats))
         reg = F.relu(self.reg_pred(reg_feats))
         return cls, reg
